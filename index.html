@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Goal Forge - Produtividade e Goal Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="./app.js" defer></script>
+</head>
+<body class="theme-light">
+  <div class="glow glow-top"></div>
+  <div class="glow glow-bottom"></div>
+
+  <div class="app-shell">
+    <header class="hero">
+      <div class="hero-top">
+        <div class="brand-chip">
+          <span class="brand-dot"></span>
+          Goal Forge
+        </div>
+        <button id="theme-toggle" class="nav-btn theme-icon-btn" type="button" aria-label="Ativar modo escuro" title="Ativar modo escuro">&#9790;</button>
+      </div>
+      <h1>Produtividade e Goal Tracker</h1>
+      <p>Organize habitos e objetivos com paginas dedicadas, checklists por etapa e graficos de progresso para acompanhar sua evolucao.</p>
+      <nav class="main-nav">
+        <button id="nav-dashboard" class="nav-btn" type="button">Dashboard</button>
+        <button id="nav-goals" class="nav-btn" type="button">Objetivos</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="view-dashboard" class="view">
+        <div class="dashboard">
+          <section class="panel controls-panel">
+            <h2>Novo Habito / Objetivo</h2>
+            <form id="item-form" class="item-form">
+              <label for="item-name">Nome</label>
+              <input id="item-name" name="item-name" type="text" maxlength="64" placeholder="Ex: Treinar 45 minutos" required>
+
+              <label for="item-type">Tipo</label>
+              <select id="item-type" name="item-type">
+                <option value="habit">Habito</option>
+                <option value="goal">Objetivo</option>
+              </select>
+
+              <button type="submit" class="btn-primary">Adicionar</button>
+            </form>
+
+            <section class="timeblock-panel" aria-label="Cronograma diario">
+              <div class="section-heading timeblock-heading">
+                <h3>Cronograma</h3>
+                <span class="hint">06:00 - 22:00</span>
+              </div>
+              <p class="hint">Arraste os blocos para mover e use +, -, ou a alca inferior para expandir/recolher o tempo.</p>
+              <div class="timeblock-shell">
+                <div id="timeblock-hours" class="timeblock-hours"></div>
+                <div id="timeblock-lane" class="timeblock-lane"></div>
+              </div>
+            </section>
+
+            <div class="stat-grid">
+              <article class="stat-card">
+                <span class="stat-label">Hoje</span>
+                <strong id="stat-today">0%</strong>
+              </article>
+              <article class="stat-card">
+                <span class="stat-label">Semana</span>
+                <strong id="stat-week">0%</strong>
+              </article>
+              <article class="stat-card">
+                <span class="stat-label">Streak</span>
+                <strong id="stat-streak">0 dias</strong>
+              </article>
+              <article class="stat-card">
+                <span class="stat-label">Projetos</span>
+                <strong id="stat-projects">0</strong>
+              </article>
+            </div>
+
+            <div class="actions">
+              <button id="seed-button" class="btn-ghost" type="button">Preencher Exemplo</button>
+              <button id="clear-button" class="btn-ghost danger" type="button">Limpar Dados</button>
+            </div>
+          </section>
+
+          <section class="panel checklist-panel">
+            <div class="section-heading">
+              <h2>Checklist da Data Selecionada</h2>
+              <span id="today-label" class="today-label"></span>
+            </div>
+            <form id="daily-checklist-form" class="inline-form">
+              <input id="daily-checklist-input" type="text" maxlength="96" placeholder="Ex: Revisar planejamento da semana" required>
+              <button class="btn-primary" type="submit">Adicionar</button>
+            </form>
+            <ul id="today-list" class="today-list"></ul>
+          </section>
+
+          <section class="panel checklist-pie-panel">
+            <div class="checklist-pie-title">Progresso da Checklist da Data</div>
+            <div class="checklist-pie-wrap">
+              <canvas id="daily-checklist-pie-chart"></canvas>
+              <div class="checklist-pie-center">
+                <strong id="daily-checklist-pie-number">0%</strong>
+                <span>concluido</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel weekly-panel">
+            <div class="section-heading">
+              <h2>Matriz Semanal de Habitos</h2>
+              <span class="hint">Clique para marcar ou desmarcar</span>
+            </div>
+            <div class="table-wrap">
+              <table id="weekly-table" class="weekly-table"></table>
+            </div>
+          </section>
+
+          <section class="panel charts-panel">
+            <h2>Indicadores de Habitos</h2>
+            <div class="chart-grid">
+              <article class="chart-card">
+                <div class="chart-title">Progresso Diario (14 dias)</div>
+                <div class="chart-wrap"><canvas id="daily-chart"></canvas></div>
+              </article>
+              <article class="chart-card">
+                <div class="chart-title">Progresso Semanal (12 semanas)</div>
+                <div class="chart-wrap"><canvas id="weekly-chart"></canvas></div>
+              </article>
+              <article class="chart-card">
+                <div class="chart-title">Conclusao dos Habitos</div>
+                <div class="chart-wrap donut-wrap">
+                  <canvas id="completion-chart"></canvas>
+                  <div class="donut-center">
+                    <strong id="completion-number">0%</strong>
+                    <span>concluido</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </section>
+
+          <section class="panel calendar-panel">
+            <div class="section-heading">
+              <h2>Calendario Diario</h2>
+              <div class="calendar-nav">
+                <button id="calendar-prev" class="btn-ghost" type="button" aria-label="Mes anterior">&lt;</button>
+                <strong id="calendar-month-label">--</strong>
+                <button id="calendar-next" class="btn-ghost" type="button" aria-label="Proximo mes">&gt;</button>
+              </div>
+            </div>
+            <div id="calendar-grid" class="calendar-grid"></div>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-goals" class="view">
+        <section class="panel goals-overview">
+          <div class="section-heading">
+            <h2>Objetivos</h2>
+            <span class="hint">Cada objetivo tem sua propria pagina com etapas e graficos</span>
+          </div>
+          <div id="goals-list" class="goals-list"></div>
+        </section>
+      </section>
+
+      <section id="view-goal-detail" class="view">
+        <section class="panel goal-detail-panel">
+          <div class="detail-head">
+            <button id="goal-back-button" class="btn-ghost" type="button">Voltar para objetivos</button>
+            <button id="goal-remove-button" class="btn-ghost danger" type="button">Remover objetivo</button>
+          </div>
+
+          <h2 id="goal-detail-title">Objetivo</h2>
+          <p id="goal-detail-subtitle" class="hint"></p>
+
+          <div class="goal-detail-grid">
+            <article class="sub-panel">
+              <h3>Etapas do Objetivo</h3>
+              <form id="stage-form" class="stage-form">
+                <input id="stage-name-input" type="text" maxlength="64" placeholder="Nome da etapa" required>
+                <button class="btn-primary" type="submit">Criar Etapa</button>
+              </form>
+              <ul id="stages-list" class="stage-list"></ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="panel charts-panel">
+          <h2>Graficos do Objetivo</h2>
+          <div class="chart-grid">
+            <article class="chart-card">
+              <div class="chart-title">Percentual por Etapa</div>
+              <div class="chart-wrap"><canvas id="goal-stage-chart"></canvas></div>
+            </article>
+            <article class="chart-card">
+              <div class="chart-title">Progresso Semanal do Objetivo</div>
+              <div class="chart-wrap"><canvas id="goal-weekly-chart"></canvas></div>
+            </article>
+            <article class="chart-card">
+              <div class="chart-title">Conclusao do Objetivo</div>
+              <div class="chart-wrap donut-wrap">
+                <canvas id="goal-completion-chart"></canvas>
+                <div class="donut-center">
+                  <strong id="goal-completion-number">0%</strong>
+                  <span>concluido</span>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-stage-detail" class="view">
+        <section class="panel stage-detail-panel">
+          <div class="detail-head">
+            <button id="stage-back-button" class="btn-ghost" type="button">Voltar para objetivo</button>
+          </div>
+
+          <h2 id="stage-title">Etapa</h2>
+          <p id="stage-parent-title" class="hint"></p>
+
+          <div class="stage-info-row">
+            <label class="check-label">
+              <input id="stage-today-check" type="checkbox">
+              Etapa concluida hoje
+            </label>
+            <span id="stage-progress-text" class="hint"></span>
+          </div>
+
+          <article class="sub-panel">
+            <h3>Anotacoes da Etapa</h3>
+            <textarea id="stage-notes" class="notes-input" placeholder="Escreva aprendizados, bloqueios, proximos passos..."></textarea>
+          </article>
+
+          <article class="sub-panel">
+            <h3>Checklist da Etapa</h3>
+            <form id="stage-checklist-form" class="inline-form">
+              <input id="stage-checklist-input" type="text" maxlength="80" placeholder="Ex: Validar entrega com o time" required>
+              <button class="btn-primary" type="submit">Adicionar</button>
+            </form>
+            <ul id="stage-checklist-list" class="simple-list"></ul>
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
