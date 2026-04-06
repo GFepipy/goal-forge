@@ -93,6 +93,8 @@ const elements = {
   goalWeeklyCanvas: document.getElementById("goal-weekly-chart"),
   goalCompletionCanvas: document.getElementById("goal-completion-chart"),
   goalCompletionNumber: document.getElementById("goal-completion-number"),
+  weeklyPrev: document.getElementById("weekly-prev"),
+  weeklyNext: document.getElementById("weekly-next"),
   stageBackButton: document.getElementById("stage-back-button"),
   stageTitle: document.getElementById("stage-title"),
   stageParentTitle: document.getElementById("stage-parent-title"),
@@ -107,6 +109,7 @@ const elements = {
 init();
 
 function init() {
+  state.weeklyOffsetWeeks = 0;
   loadThemePreference();
   bindEvents();
   pruneOrphanLogs();
@@ -585,6 +588,19 @@ function bindEvents() {
     current.stage.checklist = current.stage.checklist.filter((entry) => entry.id !== itemId);
     persistAndRender();
   });
+
+  if (elements.weeklyPrev) {
+    elements.weeklyPrev.addEventListener("click", () => {
+      state.weeklyOffsetWeeks -= 1;
+      persistAndRender();
+    });
+  }
+  if (elements.weeklyNext) {
+    elements.weeklyNext.addEventListener("click", () => {
+      state.weeklyOffsetWeeks += 1;
+      persistAndRender();
+    });
+  }
 }
 
 function handleHashChange() {
@@ -1238,7 +1254,8 @@ function handleCalendarGridClick(event) {
 }
 
 function renderHabitsWeeklyTable(habits) {
-  const dates = getPastDates(7);
+  const endDateIso = getLocalISODate(addDays(new Date(), state.weeklyOffsetWeeks * 7));
+  const dates = getPastDates(7, endDateIso);
   const headerCells = dates
     .map((date) => {
       const label = formatDateShort(date);
@@ -2396,6 +2413,7 @@ function loadState() {
         dailyChecklistsByDate: {},
         calendarState: createDefaultCalendarState(),
         timeBlocksByDate: {},
+        weeklyOffsetWeeks: 0,
       };
     }
 
@@ -2409,6 +2427,7 @@ function loadState() {
       dailyChecklistsByDate: {},
       calendarState: createDefaultCalendarState(),
       timeBlocksByDate: {},
+      weeklyOffsetWeeks: 0,
     };
   }
 }
@@ -2422,6 +2441,7 @@ function normalizeState(parsed) {
     dailyChecklistsByDate: normalizeDailyChecklistMap(parsed.dailyChecklistsByDate),
     calendarState: normalizeCalendarState(parsed.calendarState),
     timeBlocksByDate: normalizeTimeBlocksByDateMap(parsed.timeBlocksByDate, parsed.timeBlocks),
+    weeklyOffsetWeeks: Number(parsed.weeklyOffsetWeeks) || 0,
   };
 }
 
