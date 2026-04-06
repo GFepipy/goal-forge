@@ -1254,8 +1254,10 @@ function handleCalendarGridClick(event) {
 }
 
 function renderHabitsWeeklyTable(habits) {
-  const endDateIso = getLocalISODate(addDays(new Date(), state.weeklyOffsetWeeks * 7));
-  const dates = getPastDates(7, endDateIso);
+  const currentMonday = startOfWeek(new Date());
+  const targetMonday = addDays(currentMonday, state.weeklyOffsetWeeks * 7);
+  const targetSunday = addDays(targetMonday, 6);
+  const dates = getPastDates(7, getLocalISODate(targetSunday));
   const headerCells = dates
     .map((date) => {
       const label = formatDateShort(date);
