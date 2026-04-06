@@ -45,6 +45,8 @@ const route = {
   stageId: null,
 };
 let timeblockInteraction = null;
+let draggedGoalId = null;
+
 
 const elements = {
   navDashboard: document.getElementById("nav-dashboard"),
@@ -231,19 +233,30 @@ function bindEvents() {
     if (!(target instanceof HTMLButtonElement)) {
       return;
     }
-    if (!target.matches(".toggle-day")) {
+
+    if (target.matches(".toggle-day")) {
+      const date = target.dataset.date;
+      const habitId = target.dataset.habitId;
+      if (!date || !habitId) {
+        return;
+      }
+      const checked = isHabitChecked(date, habitId);
+      setHabitLog(date, habitId, !checked);
+      persistAndRender();
       return;
     }
 
-    const date = target.dataset.date;
-    const habitId = target.dataset.habitId;
-    if (!date || !habitId) {
-      return;
+    if (target.matches(".remove-habit-btn")) {
+      const habitId = target.dataset.removeHabitId;
+      if (!habitId) {
+        return;
+      }
+      const ok = window.confirm("Deseja remover este habito?");
+      if (!ok) {
+        return;
+      }
+      removeItem(habitId);
     }
-
-    const checked = isHabitChecked(date, habitId);
-    setHabitLog(date, habitId, !checked);
-    persistAndRender();
   });
 
   if (elements.timeblockLane) {
@@ -950,7 +963,7 @@ function handleTimeblockPointerDown(event) {
   document.body.classList.add("timeblock-dragging");
   try {
     blockElement.setPointerCapture(event.pointerId);
-  } catch (_error) {}
+  } catch (_error) { }
   window.addEventListener("pointermove", handleTimeblockPointerMove);
   window.addEventListener("pointerup", handleTimeblockPointerEnd);
   window.addEventListener("pointercancel", handleTimeblockPointerEnd);
@@ -1009,7 +1022,7 @@ function handleTimeblockPointerEnd(event) {
     if (interaction.blockElement.hasPointerCapture(interaction.pointerId)) {
       interaction.blockElement.releasePointerCapture(interaction.pointerId);
     }
-  } catch (_error) {}
+  } catch (_error) { }
 
   window.removeEventListener("pointermove", handleTimeblockPointerMove);
   window.removeEventListener("pointerup", handleTimeblockPointerEnd);
@@ -1268,6 +1281,7 @@ function renderHabitsWeeklyTable(habits) {
             <div class="row-title">
               <span class="mini-dot" style="background:${habit.color}"></span>
               ${escapeHtml(habit.name)}
+              <button class="remove-habit-btn" type="button" data-remove-habit-id="${habit.id}" title="Remover habito" aria-label="Remover habito">&times;</button>
             </div>
           </td>
           ${cells}
@@ -1397,6 +1411,15 @@ function renderGoalsOverview() {
 
     const card = document.createElement("article");
     card.className = "goal-card";
+    card.draggable = true;
+    card.dataset.id = goal.id;
+
+    card.addEventListener("dragstart", handleGoalDragStart);
+    card.addEventListener("dragover", handleGoalDragOver);
+    card.addEventListener("dragleave", handleGoalDragLeave);
+    card.addEventListener("drop", handleGoalDrop);
+    card.addEventListener("dragend", handleGoalDragEnd);
+
     card.innerHTML = `
       <h3>${escapeHtml(goal.name)}</h3>
       <div class="meta">${goal.stages.length} etapas | ${doneStages} concluidas</div>
@@ -2676,4 +2699,64 @@ function escapeHtml(value) {
 
 function escapeAttribute(value) {
   return escapeHtml(value).replaceAll("`", "&#96;");
+}
+
+function handleGoalDragStart(event) {
+  draggedGoalId = event.currentTarget.dataset.id;
+  event.currentTarget.classList.add("dragging");
+  event.dataTransfer.effectAllowed = "move";
+}
+
+function handleGoalDragOver(event) {
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  const card = event.currentTarget;
+  if (card.dataset.id !== draggedGoalId) {
+    card.classList.add("drag-over");
+  }
+}
+
+function handleGoalDragLeave(event) {
+  event.currentTarget.classList.remove("drag-over");
+}
+
+function handleGoalDrop(event) {
+  event.preventDefault();
+  const card = event.currentTarget;
+  card.classList.remove("drag-over");
+  const targetId = card.dataset.id;
+
+  if (draggedGoalId && targetId && draggedGoalId !== targetId) {
+    reorderGoals(draggedGoalId, targetId);
+  }
+}
+
+function handleGoalDragEnd(event) {
+  event.currentTarget.classList.remove("dragging");
+  const cards = elements.goalsList.querySelectorAll(".goal-card");
+  cards.forEach((c) => c.classList.remove("drag-over"));
+  draggedGoalId = null;
+}
+
+function reorderGoals(draggedId, targetId) {
+  const goals = state.items.filter((item) => item.type === "goal");
+  const draggedInGoals = goals.findIndex((g) => g.id === draggedId);
+  const targetInGoals = goals.findIndex((g) => g.id === targetId);
+
+  if (draggedInGoals === -1 || targetInGoals === -1) {
+    return;
+  }
+
+  const [draggedGoal] = goals.splice(draggedInGoals, 1);
+  goals.splice(targetInGoals, 0, draggedGoal);
+
+  let goalIdx = 0;
+  state.items = state.items.map((item) => {
+    if (item.type === "goal") {
+      return goals[goalIdx++];
+    }
+    return item;
+  });
+
+  persistAndRender();
 }
